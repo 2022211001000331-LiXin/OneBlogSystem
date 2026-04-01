@@ -1,0 +1,30 @@
+1、访问地址和账号密码
+博客主页：http://localhost:80
+账号：
+后台：管理员：admin  123456
+前台：普通用户： user 123456
+
+2、运行环境
+运行环境
+开发工具：IDEA
+数据库：MySQL8.0
+数据库管理工具：Navicat10以上版本
+环境配置软件： JDK1.8+Maven3.6.3
+前端Nodejs：16
+
+3、注意事项
+
+blog-start=>  application-druid.yml里面配置数据库账号密码信息
+
+blog-start=>  application.yml里面配置本地文件上传路径
+
+启动redis
+
+后端启动：blog-backend => blog-start里面的启动类右键启动就行
+
+项目开发工具+搭建环境+运行教程：https://kdocs.cn/l/ccPPioaOQ6qy
+
+
+
+
+
