@@ -64,6 +64,16 @@ public class CmsComment extends BaseEntity {
     /** 点赞 */
     private boolean isLike;
 
+    /** 情感倾向 */
+    private String sentiment;
+
+    /** 情感置信度 */
+    private Double confidence;
+
+    /** 提取的关键词 */
+    private String keywords;
+
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -164,6 +174,10 @@ public class CmsComment extends BaseEntity {
         return isLike;
     }
 
+    public void setIsLike(boolean like) {
+        isLike = like;
+    }
+
     public String getBlogTitle() {
         return blogTitle;
     }
@@ -172,8 +186,28 @@ public class CmsComment extends BaseEntity {
         this.blogTitle = blogTitle;
     }
 
-    public void setIsLike(boolean like) {
-        isLike = like;
+    public String getSentiment() {
+        return sentiment;
+    }
+
+    public void setSentiment(String sentiment) {
+        this.sentiment = sentiment;
+    }
+
+    public Double getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(Double confidence) {
+        this.confidence = confidence;
+    }
+
+    public String getKeywords() {
+        return keywords;
+    }
+
+    public void setKeywords(String keywords) {
+        this.keywords = keywords;
     }
 
     @Override
@@ -197,6 +231,9 @@ public class CmsComment extends BaseEntity {
                 .append("children", getChildren())
                 .append("pCreateBy", getPCreateBy())
                 .append("isLike", getIsLike())
+                .append("sentiment", getSentiment())
+                .append("confidence", getConfidence())
+                .append("keywords", getKeywords())
                 .toString();
     }
 }

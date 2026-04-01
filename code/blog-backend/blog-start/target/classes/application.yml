@@ -122,3 +122,9 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# AI 情感分析配置
+ai:
+  sentiment:
+    # Python FastAPI 地址
+    url: http://127.0.0.1:8000/analyze

@@ -4,6 +4,7 @@ import com.shanzhu.blog.cms.domain.CmsComment;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -86,4 +87,13 @@ public interface CmsCommentMapper {
      * @return 结果
      */
     int updateDelFlagByIds(Long[] ids);
+
+    /** 统计情感比例 */
+    List<Map<String, Object>> selectSentimentPieData();
+
+    /** 统计近7天趋势 */
+    List<Map<String, Object>> selectSentimentTrendData();
+
+    /** 查询负面词云原始数据 */
+    List<String> selectNegativeKeywords();
 }

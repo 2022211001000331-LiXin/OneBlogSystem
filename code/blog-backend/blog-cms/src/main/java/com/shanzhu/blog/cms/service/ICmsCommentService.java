@@ -4,6 +4,7 @@ import com.shanzhu.blog.cms.domain.CmsComment;
 import com.shanzhu.blog.cms.domain.CmsCommentLike;
 
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -73,4 +74,6 @@ public interface ICmsCommentService {
      * @return 结果
      */
     int deleteCmsCommentById(Long id);
+
+    Map<String, Object> getSentimentDashboardData();
 }

@@ -18,10 +18,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
+        <result property="sentiment"    column="sentiment"    />
+        <result property="confidence"    column="confidence"    />
+        <result property="keywords"    column="keywords"    />
     </resultMap>
 
     <sql id="selectCmsCommentVo">
-        select id, parent_id, main_id, like_num, content, type, blog_id, del_flag, user_id, create_by, create_time, update_by, update_time from cms_comment
+        select id, parent_id, main_id, like_num, content, type, blog_id, del_flag, user_id, create_by, create_time, update_by, update_time, sentiment, confidence, keywords from cms_comment
     </sql>
 
     <select id="selectCmsCommentList" parameterType="CmsComment" resultMap="CmsCommentResult">
@@ -119,6 +122,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="sentiment != null">sentiment = #{sentiment},</if>
+            <if test="confidence != null">confidence = #{confidence},</if>
+            <if test="keywords != null">keywords = #{keywords},</if>
         </trim>
         where id = #{id}
     </update>
@@ -142,4 +148,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+
+    <!-- 1. 全站情感比例统计 -->
+    <select id="selectSentimentPieData" resultType="map">
+        SELECT 
+            sentiment as name, 
+            count(*) as value 
+        FROM cms_comment 
+        WHERE del_flag = '0' AND sentiment IS NOT NULL AND sentiment != ''
+        GROUP BY sentiment
+    </select>
+
+    <!-- 2. 近7天情感趋统计 -->
+    <select id="selectSentimentTrendData" resultType="map">
+        SELECT 
+            DATE_FORMAT(create_time, '%m-%d') as day,
+            SUM(CASE WHEN sentiment = '正面' THEN 1 ELSE 0 END) as positive,
+            SUM(CASE WHEN sentiment = '负面' THEN 1 ELSE 0 END) as negative
+        FROM cms_comment
+        WHERE del_flag = '0' 
+        AND create_time >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY day
+        ORDER BY day ASC
+    </select>
+
+    <!-- 3. 获取所有负面评论的关键词（用于词云） -->
+    <select id="selectNegativeKeywords" resultType="String">
+        SELECT keywords 
+        FROM cms_comment 
+        WHERE del_flag = '0' AND sentiment = '负面' AND keywords IS NOT NULL
+    </select>
 </mapper>

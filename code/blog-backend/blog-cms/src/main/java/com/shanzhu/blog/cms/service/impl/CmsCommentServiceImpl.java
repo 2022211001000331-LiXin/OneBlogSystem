@@ -10,11 +10,16 @@ import com.shanzhu.blog.cms.service.ICmsCommentService;
 import com.shanzhu.blog.common.core.domain.entity.SysUser;
 import com.shanzhu.blog.common.utils.DateUtils;
 import com.shanzhu.blog.system.mapper.SysUserMapper;
+import com.shanzhu.blog.cms.domain.SentimentResultDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -34,6 +39,11 @@ public class CmsCommentServiceImpl implements ICmsCommentService {
 
     @Resource
     private CmsBlogMapper cmsBlogMapper;
+
+    @Resource
+    private SentimentServiceImpl sentimentService;
+
+    private static final Logger log = LoggerFactory.getLogger(CmsCommentServiceImpl.class);
 
     /**
      * 首页查询评论列表
@@ -250,7 +260,31 @@ public class CmsCommentServiceImpl implements ICmsCommentService {
             }
         }
         cmsComment.setCreateTime(DateUtils.getNowDate());
-        return cmsCommentMapper.insertCmsComment(cmsComment);
+
+        // 执行插入获取自增 ID
+        int rows = cmsCommentMapper.insertCmsComment(cmsComment);
+        
+        // 如果插入成功，且评论有内容，则触发 AI 分析
+        if (rows > 0 && cmsComment.getContent() != null) {
+            // 开启一个新线程去跑分析，不要让用户在网页上“转圈圈”等 AI 结果
+            new Thread(() -> {
+                SentimentResultDto result = sentimentService.analyzeContent(cmsComment.getContent());
+                if (result != null) {
+                    // 回填 AI 数据到数据库
+                    CmsComment updateVo = new CmsComment();
+                    updateVo.setId(cmsComment.getId());
+                    updateVo.setSentiment(result.getSentiment());
+                    updateVo.setConfidence(result.getConfidence());
+                    // 把关键词列表转为字符串存入
+                    updateVo.setKeywords(String.join(",", result.getKeywords()));
+                    
+                    cmsCommentMapper.updateCmsComment(updateVo);
+                    log.info("评论 ID: {} 情感分析完成: {}", cmsComment.getId(), result.getSentiment());
+                }
+            }).start();
+        }
+        
+        return rows;
     }
 
     /**
@@ -286,4 +320,38 @@ public class CmsCommentServiceImpl implements ICmsCommentService {
     public int deleteCmsCommentById(Long id) {
         return cmsCommentMapper.updateDelFlagById(id);
     }
+
+    // 在 ICmsCommentService 接口中定义方法，这里直接写实现
+@Override
+public Map<String, Object> getSentimentDashboardData() {
+    Map<String, Object> result = new HashMap<>();
+    
+    // 1. 获取饼图数据
+    result.put("pieData", cmsCommentMapper.selectSentimentPieData());
+    
+    // 2. 获取趋势图数据
+    result.put("trendData", cmsCommentMapper.selectSentimentTrendData());
+    
+    // 3. 处理词云数据（逻辑：取出所有负面词，统计频率）
+    List<String> allKeywords = cmsCommentMapper.selectNegativeKeywords();
+    Map<String, Integer> wordFreq = new HashMap<>();
+    for (String kws : allKeywords) {
+        if (kws != null) {
+            for (String word : kws.split(",")) {
+                wordFreq.put(word, wordFreq.getOrDefault(word, 0) + 1);
+            }
+        }
+    }
+    // 转为前端词云需要的格式 [{name: '很差', value: 10}, ...]
+    List<Map<String, Object>> cloudData = new ArrayList<>();
+    wordFreq.forEach((k, v) -> {
+        Map<String, Object> item = new HashMap<>();
+        item.put("name", k);
+        item.put("value", v);
+        cloudData.add(item);
+    });
+    result.put("cloudData", cloudData);
+    
+    return result;
+}
 }
